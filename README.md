@@ -1,122 +1,75 @@
-KasiCash AI
+# React + TypeScript + Vite
 
-Know your numbers. Grow your business.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-KasiCash AI is an AI-powered financial management platform designed to help South African small businesses manage income, expenses, invoices and cash flow through accessible financial analytics and intelligent business insights.
+Currently, two official plugins are available:
 
-The Problem
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-Many small businesses struggle to manage their finances, track expenses, monitor unpaid invoices and understand their financial performance.
+## React Compiler
 
-KasiCash AI aims to simplify financial management by bringing essential business financial tools into one accessible platform.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-The Solution
+## Expanding the ESLint configuration
 
-KasiCash AI provides a digital platform that enables small business owners to:
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-Track income and expenses.
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-Monitor business financial performance.
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-Manage customer invoices.
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 
-Visualise cash flow.
+```
 
-Receive AI-powered financial insights.
+You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
 
-Planned Features
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-Business financial dashboard.
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 
-Income and expense management.
-
-Invoice management.
-
-AI-powered financial insights.
-
-Admin dashboard.
-
-Target Market
-
-Township entrepreneurs.
-
-Small businesses.
-
-Freelancers.
-
-Retail businesses.
-
-Catering businesses.
-
-Tailors and clothing businesses.
-
-Independent service providers.
-
-Technology Stack
-
-Technology
-
-Purpose
-
-React
-
-Frontend
-
-TypeScript
-
-Application development
-
-Tailwind CSS
-
-UI styling
-
-Supabase
-
-Backend platform
-
-PostgreSQL
-
-Database
-
-Supabase Auth
-
-Authentication
-
-AI API
-
-AI-powered financial insights
-
-GitHub Actions
-
-Continuous Integration
-
-Vercel
-
-Deployment
-
-Project Documentation
-
-Business Proposal
-
-Product Requirements Document
-
-Implementation Plan
-
-UI/UX Designs
-
-Project Status
-
-<details>
-<summary>Capstone project development</summary>
-
-This project is currently in the planning and initial development phase.
-
-The application will be developed incrementally through documented requirements, design, implementation, testing and deployment.
-
-</details>
-
-Vision
-
-To empower small businesses with accessible digital financial tools that improve financial visibility, business decision-making and sustainable growth.
-
-Developed as a full-stack AI Software Developer capstone project.
+```
