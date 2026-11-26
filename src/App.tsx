@@ -1,4 +1,7 @@
-
+import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
+import type { Session } from '@supabase/supabase-js'
+import { supabase } from './lib/supabase'
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -54,6 +57,178 @@ const money = (amount: number) =>
   `R${amount.toLocaleString('en-ZA')}`
 
 function App() {
+  const [session, setSession] = useState<Session | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [authMessage, setAuthMessage] = useState('')
+  const [businessName, setBusinessName] = useState('')
+  const [businessType, setBusinessType] = useState('Retail')
+  const [businessError, setBusinessError] = useState('')
+  const [businessLoading, setBusinessLoading] = useState(false)
+  const [business, setBusiness] = useState<any>(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setLoading(false)
+    })
+
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session)
+        setLoading(false)
+      })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleAuth = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setAuthError('')
+    setAuthMessage('')
+
+    if (isRegistering) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+
+      if (error) {
+        setAuthError(error.message)
+      } else {
+        setAuthMessage('Account created! Check your email to confirm your account before logging in.')
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) setAuthError(error.message)
+    }
+  }
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) setAuthError(error.message)
+    }
+
+    const handleCreateBusiness = async (event: FormEvent<HTMLFormElement>) => {
+  event.preventDefault()
+  setBusinessError('')
+  setBusinessLoading(true)
+
+  const { data, error } = await supabase
+    .from('businesses')
+    .insert({
+      business_name: businessName,
+      business_type: businessType,
+      currency: 'ZAR',
+      created_by: session?.user.id,
+    })
+    .select()
+    .single()
+
+  setBusinessLoading(false)
+
+  if (error) {
+    setBusinessError(error.message)
+    return
+  }
+  setBusiness(data)
+  }
+
+  if (loading) {
+    return <div className="p-10 text-center">Loading KasiCash AI...</div>
+  }
+
+  if (!session) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-5">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
+          <div className="mb-6 text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-600 text-2xl font-bold text-white">
+              K
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              KasiCash <span className="text-emerald-600">AI</span>
+            </h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Know your numbers. Grow your business.
+            </p>
+          </div>
+
+          <h2 className="mb-5 text-xl font-semibold text-slate-800">
+            {isRegistering ? 'Create your account' : 'Welcome back'}
+          </h2>
+
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Email address</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-600"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">Password</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-600"
+                placeholder="At least 6 characters"
+              />
+            </div>
+
+            {authError && (
+              <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                {authError}
+              </p>
+            )}
+
+            {authMessage && (
+              <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
+                {authMessage}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700"
+            >
+              {isRegistering ? 'Create account' : 'Sign in'}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            {isRegistering ? 'Already have an account?' : "Don't have an account?"}{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegistering(!isRegistering)
+                setAuthError('')
+                setAuthMessage('')
+              }}
+              className="font-semibold text-emerald-600"
+            >
+              {isRegistering ? 'Sign in' : 'Register'}
+            </button>
+          </p>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="min-h-screen bg-[#f7f8fc] text-slate-800">
       <div className="flex min-h-screen">
@@ -138,9 +313,75 @@ function App() {
                 <span className="hidden sm:inline">New transaction</span>
                 <span className="sm:hidden">Add</span>
               </button>
+              <button
+  onClick={handleLogout}
+  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+>
+  Sign out
+</button>
             </div>
           </header>
+{!business && (
+  <div className="mx-auto max-w-xl p-6">
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <h2 className="mb-2 text-2xl font-bold text-gray-900">
+        Set up your business
+      </h2>
 
+      <p className="mb-6 text-sm text-gray-500">
+        Enter your business details to get started with KasiCash AI.
+      </p>
+
+      <form onSubmit={handleCreateBusiness} className="space-y-4">
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Business name
+          </label>
+
+          <input
+            type="text"
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+            placeholder="e.g. Tshwarelo's Fashion"
+            required
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Business type
+          </label>
+
+          <select
+            value={businessType}
+            onChange={(e) => setBusinessType(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          >
+            <option value="Retail">Retail</option>
+            <option value="Salon & Beauty">Salon & Beauty</option>
+            <option value="Food & Catering">Food & Catering</option>
+            <option value="Fashion & Tailoring">Fashion & Tailoring</option>
+            <option value="Professional Services">Professional Services</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        {businessError && (
+          <p className="text-sm text-red-600">{businessError}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={businessLoading}
+          className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {businessLoading ? 'Creating business...' : 'Create business'}
+        </button>
+      </form>
+    </div>
+  </div>
+)}
           <div className="mx-auto max-w-[1500px] space-y-7 p-5 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -315,5 +556,4 @@ function App() {
     </div>
   )
 }
-
 export default App
